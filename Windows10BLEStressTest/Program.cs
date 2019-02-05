@@ -17,7 +17,7 @@ namespace Windows10BLEStressTesst
     public class Program
     {
         public static int NumberOfThreads = 1;
-        public static int NumberOfWatchers = 10;
+        public static int NumberOfWatchers = 1;
         public static TimeSpan WatcherLifespan = TimeSpan.FromMinutes(1);
 
         static void Main(string[] args)

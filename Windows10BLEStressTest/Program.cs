@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
+using Mono.Options;
 
 namespace Windows10BLEStressTesst
 {
@@ -16,6 +17,14 @@ namespace Windows10BLEStressTesst
 
         static void Main(string[] args)
         {
+            var cli = new OptionSet()
+            {
+                {"t=", "Number of threads to create.", v => NumberOfThreads = Int32.Parse(v)},
+                {"p=", "Number of watchers per thread to create.", v => NumberOfWatchers = Int32.Parse(v)},
+            };
+
+            cli.Parse(args);
+
             for (var i = 0; i < NumberOfThreads; i++)
             {
                 new Thread(() =>

@@ -8,12 +8,17 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Mono.Options;
 
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
+
 namespace Windows10BLEStressTesst
 {
     public class Program
     {
         public static int NumberOfThreads = 10;
         public static int NumberOfWatchers = 10;
+        public static TimeSpan WatcherLifespan = TimeSpan.FromMinutes(1);
 
         static void Main(string[] args)
         {
@@ -31,16 +36,21 @@ namespace Windows10BLEStressTesst
             {
                 new Thread(() =>
                 {
-                    List<BluetoothLEAdvertisementWatcher> threadWatchers = new List<BluetoothLEAdvertisementWatcher>();
-                    for (var j = 0; j < NumberOfWatchers; j++)
+                    while (true)
                     {
-                        threadWatchers.Add(Watcher.Start());
+                        List<Watcher> threadWatchers = new List<Watcher>();
+                        for (var j = 0; j < NumberOfWatchers; j++)
+                        {
+                            var watcher = new Watcher();
+                            threadWatchers.Add(watcher);
+                            watcher.Start();
+                        }
+
+                        Thread.Sleep(WatcherLifespan);
+
+                        foreach (var watcher in threadWatchers)
+                            watcher.Stop();
                     }
-
-                    Thread.Sleep(Int32.MaxValue);
-
-                    foreach (var watcher in threadWatchers)
-                        watcher.Stop();
                 }).Start();
             }
 
@@ -50,34 +60,80 @@ namespace Windows10BLEStressTesst
         }
     }
 
-    public static class Watcher
+    public class Watcher
     {
-        public static BluetoothLEAdvertisementWatcher Start()
+        private BluetoothLEAdvertisementWatcher _watcher;
+        private Dictionary<ulong, BluetoothLEDevice> _devices = new Dictionary<ulong, BluetoothLEDevice>();
+
+        public void Start()
         {
-            var watcher = new BluetoothLEAdvertisementWatcher();
+            if (_watcher != null)
+                throw new Exception("Should only be started once");
+
+            var watcher = new BluetoothLEAdvertisementWatcher()
+            {
+                ScanningMode = BluetoothLEScanningMode.Active
+            };
             watcher.SignalStrengthFilter = new BluetoothSignalStrengthFilter()
             {
                 SamplingInterval = TimeSpan.Zero
             };
 
-            GlobalCounters.IncrementCreated();
+            GlobalCounters.IncrementWatchersCreated();
 
             watcher.Received += WatcherReceived;
             watcher.Stopped += WatcherStopped;
 
             watcher.Start();
 
-            return watcher;
+            _watcher = watcher;
         }
 
-        private static void WatcherStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)
+        public void Stop()
         {
-            GlobalCounters.IncrementClosed();
+            _watcher.Stop();
         }
 
-        private static void WatcherReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
+        private void WatcherStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)
+        {
+            GlobalCounters.IncrementWatchersClosed();
+        }
+
+        private async void WatcherReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
         {
             GlobalCounters.IncrementAdvertisementsSeen();
+
+            if (_devices.ContainsKey(args.BluetoothAddress))
+                return;
+
+            var device = await BluetoothLEDevice.FromBluetoothAddressAsync(args.BluetoothAddress);
+            device.ConnectionStatusChanged += ConnectionStatusChanged;
+
+            _devices[args.BluetoothAddress] = device;
+
+            GlobalCounters.IncrementDevicesCreated();
+        }
+
+        private void ConnectionStatusChanged(BluetoothLEDevice sender, object args)
+        {
+            if (!_devices.ContainsKey(sender.BluetoothAddress))
+                throw new Exception("\nReceived connection status change for non-created device.");
+
+            var connectionStatus = sender.ConnectionStatus;
+
+            if (connectionStatus == BluetoothConnectionStatus.Connected)
+                GlobalCounters.IncrementDevicesConnected();
+            else if (connectionStatus == BluetoothConnectionStatus.Disconnected)
+            {
+                GlobalCounters.IncrementDevicesClosed();
+                var device = _devices[sender.BluetoothAddress];
+                _devices.Remove(sender.BluetoothAddress);
+                device.Dispose();
+            }
+            else
+            {
+                throw new Exception("unrecognized bluetooth connection status: " + connectionStatus);
+            }
         }
     }
 }

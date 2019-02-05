@@ -9,13 +9,14 @@ using Mono.Options;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows10BLEStressTest;
 
 namespace Windows10BLEStressTesst
 {
     public class Program
     {
-        public static int NumberOfThreads = 10;
-        public static int NumberOfWatchers = 10;
+        public static int NumberOfThreads = 1;
+        public static int NumberOfWatchers = 1;
         public static TimeSpan WatcherLifespan = TimeSpan.FromMinutes(1);
 
         static void Main(string[] args)
@@ -34,21 +35,24 @@ namespace Windows10BLEStressTesst
             {
                 new Thread(() =>
                 {
-                    while (true)
+                    ExceptionLogger.Run(() =>
                     {
-                        List<Watcher> threadWatchers = new List<Watcher>();
-                        for (var j = 0; j < NumberOfWatchers; j++)
+                        while (true)
                         {
-                            var watcher = new Watcher();
-                            threadWatchers.Add(watcher);
-                            watcher.Start();
+                            List<Watcher> threadWatchers = new List<Watcher>();
+                            for (var j = 0; j < NumberOfWatchers; j++)
+                            {
+                                var watcher = new Watcher();
+                                threadWatchers.Add(watcher);
+                                watcher.Start();
+                            }
+
+                            Thread.Sleep(WatcherLifespan);
+
+                            foreach (var watcher in threadWatchers)
+                                watcher.Stop();
                         }
-
-                        Thread.Sleep(WatcherLifespan);
-
-                        foreach (var watcher in threadWatchers)
-                            watcher.Stop();
-                    }
+                    });
                 }).Start();
             }
 

@@ -10,13 +10,14 @@ namespace Windows10BLEStressTesst
         public static int AdvertisementsSeen;
 
         public static int DevicesCreated;
+        public static int DeviceCreationFailed;
         public static int DevicesConnected;
         public static int DevicesClosed;
 
         public static void DisplayCounters()
         {
             Console.Write(
-                $"\rWatchers (Crt: {WatchersCreated}, Stp: {WatchersStopped}, Adv: {AdvertisementsSeen}), Devices (Crt: {DevicesCreated}, Cnct: {DevicesConnected}, Cls: {DevicesClosed} )");
+                $"\rWatchers (Crt: {WatchersCreated}, Stp: {WatchersStopped}, Adv: {AdvertisementsSeen}), Devices (Crt: {DevicesCreated}, Fld: {DeviceCreationFailed} Cnct: {DevicesConnected}, Cls: {DevicesClosed} )");
         }
 
         public static void IncrementWatchersCreated()
@@ -52,6 +53,12 @@ namespace Windows10BLEStressTesst
         public static void IncrementDevicesClosed()
         {
             Interlocked.Increment(ref DevicesClosed);
+            DisplayCounters();
+        }
+
+        public static void IncrementFailedCreate()
+        {
+            Interlocked.Increment(ref DeviceCreationFailed);
             DisplayCounters();
         }
     }

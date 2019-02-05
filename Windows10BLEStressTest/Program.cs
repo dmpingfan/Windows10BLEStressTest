@@ -20,10 +20,16 @@ namespace Windows10BLEStressTesst
             {
                 new Thread(() =>
                 {
+                    List<BluetoothLEAdvertisementWatcher> threadWatchers = new List<BluetoothLEAdvertisementWatcher>();
                     for (var j = 0; j < NumberOfWatchers; j++)
                     {
-                        Watcher.Start();
+                        threadWatchers.Add(Watcher.Start());
                     }
+
+                    Thread.Sleep(Int32.MaxValue);
+
+                    foreach (var watcher in threadWatchers)
+                        watcher.Stop();
                 }).Start();
             }
 
@@ -35,7 +41,7 @@ namespace Windows10BLEStressTesst
 
     public static class Watcher
     {
-        public static void Start()
+        public static BluetoothLEAdvertisementWatcher Start()
         {
             var watcher = new BluetoothLEAdvertisementWatcher();
             watcher.SignalStrengthFilter = new BluetoothSignalStrengthFilter()
@@ -49,6 +55,8 @@ namespace Windows10BLEStressTesst
             watcher.Stopped += WatcherStopped;
 
             watcher.Start();
+
+            return watcher;
         }
 
         private static void WatcherStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)

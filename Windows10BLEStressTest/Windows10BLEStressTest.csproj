@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C6CCF31D-FD79-4910-969F-B42D65959967}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Windows10BLEStressTesst</RootNamespace>
-    <AssemblyName>Windows10BLEStressTesst</AssemblyName>
+    <RootNamespace>Windows10BLEStressTest</RootNamespace>
+    <AssemblyName>Windows10BLEStressTest</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

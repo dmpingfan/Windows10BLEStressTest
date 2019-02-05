@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.28307.271
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Windows10BLEStressTest", "Windows10BLEStressTest\Windows10BLEStressTest.csproj", "{C6CCF31D-FD79-4910-969F-B42D65959967}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F4439801-647E-47F8-B60B-BF355E7964A1}"
+	ProjectSection(SolutionItems) = preProject
+		run-multiple-processes.ps1 = run-multiple-processes.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

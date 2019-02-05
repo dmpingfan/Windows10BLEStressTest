@@ -20,10 +20,12 @@ namespace Windows10BLEStressTesst
             var cli = new OptionSet()
             {
                 {"t=", "Number of threads to create.", v => NumberOfThreads = Int32.Parse(v)},
-                {"p=", "Number of watchers per thread to create.", v => NumberOfWatchers = Int32.Parse(v)},
+                {"w=", "Number of watchers per thread to create.", v => NumberOfWatchers = Int32.Parse(v)},
             };
 
             cli.Parse(args);
+
+            Console.WriteLine($"Creating {NumberOfThreads} each with {NumberOfWatchers} watchers.");
 
             for (var i = 0; i < NumberOfThreads; i++)
             {

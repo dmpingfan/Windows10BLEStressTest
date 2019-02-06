@@ -8,6 +8,7 @@ using Mono.Options;
 
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows10BLEStressTest;
 
@@ -42,7 +43,10 @@ namespace Windows10BLEStressTesst
                             List<Watcher> threadWatchers = new List<Watcher>();
                             for (var j = 0; j < NumberOfWatchers; j++)
                             {
-                                var watcher = new Watcher();
+                                //  Each thread will have its own set of device connections
+                                var devices = new Dictionary<ulong, BluetoothLEDevice>();
+
+                                var watcher = new Watcher(devices);
                                 threadWatchers.Add(watcher);
                                 watcher.Start();
                             }

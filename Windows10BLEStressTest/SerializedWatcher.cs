@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
+using System.Reactive.Subjects;
 using System.Threading;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
@@ -8,16 +10,16 @@ using Windows10BLEStressTest;
 
 namespace Windows10BLEStressTesst
 {
-    public class Watcher
+    [Obsolete("This class is incomplete.  After starting it I realized it was the device specific code thats forcing us back into the threadpool, so I want to focus on that first.")]
+    public class SerializedWatcher
     {
+        private readonly IScheduler _scheduler;
+        private readonly Dictionary<ulong, BluetoothLEDevice> _devices;
         private BluetoothLEAdvertisementWatcher _watcher;
-        private Dictionary<ulong, BluetoothLEDevice> _devices;
 
-        private int _originalContextId;
-        private int _originalThreadId;
-
-        public Watcher(Dictionary<ulong, BluetoothLEDevice> devices)
+        public SerializedWatcher(IScheduler scheduler, Dictionary<ulong, BluetoothLEDevice> devices)
         {
+            _scheduler = scheduler;
             _devices = devices;
         }
 
@@ -35,35 +37,28 @@ namespace Windows10BLEStressTesst
                 SamplingInterval = TimeSpan.Zero
             };
 
-            _originalContextId = Thread.CurrentContext.ContextID;
-            _originalThreadId = Thread.CurrentThread.ManagedThreadId;
-
             GlobalCounters.IncrementWatchersCreated();
 
-            watcher.Received += WatcherReceived;
-            watcher.Stopped += WatcherStopped;
+            var received = new Subject<Tuple<BluetoothLEAdvertisementReceivedEventArgs, BluetoothError?>>();
+
+            watcher.Received += (sender, args) => received.OnNext(new Tuple<BluetoothLEAdvertisementReceivedEventArgs, BluetoothError?>(args, null));
+            watcher.Stopped += (sender, args) => received.OnNext(new Tuple<BluetoothLEAdvertisementReceivedEventArgs, BluetoothError?>(null, args.Error));
 
             watcher.Start();
 
             _watcher = watcher;
         }
 
-        private void AssertSameThreadAndContext()
-        {
-            if (Thread.CurrentContext.ContextID != _originalContextId)
-                throw new Exception("Ran on different execution context than watcher creation.");
-
-            if (Thread.CurrentThread.ManagedThreadId != _originalThreadId)
-                throw new Exception("Ran on different thread id than watcher creation.");
-        }
-
         public void Stop()
         {
             _watcher.Stop();
+            _watcher.Stop();  //  Calling Stop multiple times just to verify the API
+            _watcher.Stop();  //  allows it.
         }
 
         private void WatcherStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)
         {
+            BluetoothError a = args.Error;
             //AssertSameThreadAndContext();
             GlobalCounters.IncrementWatchersClosed();
         }

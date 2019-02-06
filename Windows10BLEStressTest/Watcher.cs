@@ -65,6 +65,7 @@ namespace Windows10BLEStressTesst
 
         private async void WatcherReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)
         {
+            //  Noticed a build warning here, WatcherReceived isn't waiting on this async operation to finish.
             ExceptionLogger.Run(async () =>
             {
                 //AssertSameThreadAndContext();

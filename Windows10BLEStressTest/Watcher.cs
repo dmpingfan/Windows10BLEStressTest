@@ -74,6 +74,8 @@ namespace Windows10BLEStressTesst
                 if (_devices.ContainsKey(args.BluetoothAddress))
                     return;
 
+                _devices[args.BluetoothAddress] = null;
+
                 var device = await BluetoothLEDevice.FromBluetoothAddressAsync(args.BluetoothAddress);
 
                 if (device == null)

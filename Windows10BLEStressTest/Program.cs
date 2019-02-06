@@ -44,7 +44,7 @@ namespace Windows10BLEStressTesst
                             for (var j = 0; j < NumberOfWatchers; j++)
                             {
                                 //  Each thread will have its own set of device connections
-                                var devices = new Dictionary<ulong, BluetoothLEDevice>();
+                                var devices = new Dictionary<ulong, Device>();
 
                                 var watcher = new Watcher(devices);
                                 threadWatchers.Add(watcher);

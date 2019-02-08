@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
@@ -10,47 +9,69 @@ namespace Windows10BLEStressTesst
 {
     public class Watcher
     {
+        private readonly bool _doLogging;
         private BluetoothLEAdvertisementWatcher _watcher;
         private Dictionary<ulong, Device> _devices;
 
-        public Watcher(Dictionary<ulong, Device> devices)
+        public Watcher(Dictionary<ulong, Device> devices, bool doLogging)
         {
             _devices = devices;
+            _doLogging = doLogging;
         }
+
+        private void Log(string message)
+        {
+            if (_doLogging)
+            {
+                Console.WriteLine("\n" + message);
+            }
+        }
+
+        public ManualResetEvent IsStopped = new ManualResetEvent(true);
 
         public void Start()
         {
-            if (_watcher != null)
-                throw new Exception("Should only be started once");
-
-            var watcher = new BluetoothLEAdvertisementWatcher()
+            if (_watcher == null)
             {
-                ScanningMode = BluetoothLEScanningMode.Active
-            };
-            watcher.SignalStrengthFilter = new BluetoothSignalStrengthFilter()
-            {
-                SamplingInterval = TimeSpan.Zero
-            };
+                var watcher = new BluetoothLEAdvertisementWatcher()
+                {
+                    ScanningMode = BluetoothLEScanningMode.Active
+                };
+                watcher.SignalStrengthFilter = new BluetoothSignalStrengthFilter()
+                {
+                    SamplingInterval = TimeSpan.Zero
+                };
 
-            GlobalCounters.IncrementWatchersCreated();
+                GlobalCounters.IncrementWatchersCreated();
 
-            watcher.Received += WatcherReceived;
-            watcher.Stopped += WatcherStopped;
+                watcher.Received += WatcherReceived;
+                watcher.Stopped += WatcherStopped;
 
-            watcher.Start();
+                _watcher = watcher;
 
-            _watcher = watcher;
+                Log("Watcher created, has status " + _watcher.Status);
+            }
+
+            _watcher.Start();
+            IsStopped.Reset();
+            GlobalCounters.IncrementWatchersStarted();
+            Console.WriteLine("Watcher started, has status " + _watcher.Status);
         }
 
         public void Stop()
         {
+            var previousStatus = _watcher.Status;
             _watcher.Stop();
+            Log($"Watcher told to stop, status changed from {previousStatus} to {_watcher.Status}.");
         }
 
         private void WatcherStopped(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementWatcherStoppedEventArgs args)
         {
             //AssertSameThreadAndContext();
             GlobalCounters.IncrementWatchersClosed();
+
+            Log($"Watcher stopped for reason {args.Error}, has status {_watcher.Status}.");
+            IsStopped.Set();
         }
 
         private async void WatcherReceived(BluetoothLEAdvertisementWatcher sender, BluetoothLEAdvertisementReceivedEventArgs args)

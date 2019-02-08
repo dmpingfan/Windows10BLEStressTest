@@ -6,6 +6,7 @@ namespace Windows10BLEStressTesst
     public static class GlobalCounters
     {
         public static int WatchersCreated;
+        public static int WatchersStarted;
         public static int WatchersStopped;
         public static int AdvertisementsSeen;
 
@@ -17,12 +18,18 @@ namespace Windows10BLEStressTesst
         public static void DisplayCounters()
         {
             Console.Write(
-                $"\rWatchers (Crt: {WatchersCreated}, Stp: {WatchersStopped}, Adv: {AdvertisementsSeen}), Devices (Crt: {DevicesCreated}, Fld: {DeviceCreationFailed} Cnct: {DevicesConnected}, Cls: {DevicesClosed} )");
+                $"\rWatchers (Crt: {WatchersCreated}, Str: {WatchersStarted}, Stp: {WatchersStopped}, Adv: {AdvertisementsSeen}), Devices (Crt: {DevicesCreated}, Fld: {DeviceCreationFailed} Cnct: {DevicesConnected}, Cls: {DevicesClosed} )");
         }
 
         public static void IncrementWatchersCreated()
         {
             Interlocked.Increment(ref WatchersCreated);
+            DisplayCounters();
+        }
+
+        public static void IncrementWatchersStarted()
+        {
+            Interlocked.Increment(ref WatchersStarted);
             DisplayCounters();
         }
 
